@@ -42,6 +42,217 @@ Note: That a fungus will not grow if it is obscured by the height limit or if it
 Similarly, if bonemeal is placed inside of a dispenser, and then that dispenser is pointing into a fungus plant on its respective nylium block, then there will also be a 40% chance of it growing per attempt. Dispensers can be used to automatically grow the fungus plant, and up to 5 can surround a fungus plant, allowing for fungi to grow at 5hz on average.  
 Note: There is no diminish in return with bonemeal efficiency, and dispensers used.  
 
+## Growth Mechanics [Advanced]
+**Phase 1: Defining the shape/bounding box of the Huge Fungus**
+
+The below steps are going to create the outlines of the huge fungus and the bounding box as to where blocks can generate
+
+
+
+1. An attempt to generate a nether tree is made if the fungus is placed on top of the correct variant of nylium
+
+
+
+<p id="gdcalert1" ><span style="color: red; font-weight: bold">>>>>>  gd2md-html alert: inline image link here (to images/image1.png). Store image on your image server and adjust path/filename/extension if necessary. </span><br>(<a href="#">Back to top</a>)(<a href="#gdcalert2">Next alert</a>)<br><span style="color: red; font-weight: bold">>>>>> </span></p>
+
+
+![alt_text](images/image1.png "image_tooltip")
+
+
+
+
+2. The height of the trunk is found, between 4 and 26 blocks tall (non-uniform)
+
+
+
+<p id="gdcalert2" ><span style="color: red; font-weight: bold">>>>>>  gd2md-html alert: inline image link here (to images/image2.png). Store image on your image server and adjust path/filename/extension if necessary. </span><br>(<a href="#">Back to top</a>)(<a href="#gdcalert3">Next alert</a>)<br><span style="color: red; font-weight: bold">>>>>> </span></p>
+
+
+![alt_text](images/image2.png "image_tooltip")
+
+
+
+
+3. Step 3 is creating the stem if it’s a thick, 3x3 stem, but I’m excluding this as it’s not practical to farm thick huge fungus
+4. The height from bottom to top of the hat ‘i’ (the hat is like the leafy area of the huge fungus) is found, note ‘hatHeight’ is the ‘i’ value from the trunk height calculations. This also means that the tallest hat that can generate is 15 blocks!
+
+
+
+<p id="gdcalert3" ><span style="color: red; font-weight: bold">>>>>>  gd2md-html alert: inline image link here (to images/image3.png). Store image on your image server and adjust path/filename/extension if necessary. </span><br>(<a href="#">Back to top</a>)(<a href="#gdcalert4">Next alert</a>)<br><span style="color: red; font-weight: bold">>>>>> </span></p>
+
+
+![alt_text](images/image3.png "image_tooltip")
+
+
+
+
+5. The height from the bottom of the trunk to the bottom of the hat ‘j’ is found. Note that if ‘hatHeight’ is the smallest out of the 2 options in step 4, then ‘j’ will =0 and the hat will be touching the floor
+
+
+
+<p id="gdcalert4" ><span style="color: red; font-weight: bold">>>>>>  gd2md-html alert: inline image link here (to images/image4.png). Store image on your image server and adjust path/filename/extension if necessary. </span><br>(<a href="#">Back to top</a>)(<a href="#gdcalert5">Next alert</a>)<br><span style="color: red; font-weight: bold">>>>>> </span></p>
+
+
+![alt_text](images/image4.png "image_tooltip")
+
+
+
+**Phase 2: Block Type Distribution**
+
+This phase now moves on to calculating the positions and type of block on a per-block basis, meaning that as we run the loop over and over again and slowly increment our XYZ coordinates of ‘m’, ‘k’, and ‘n’ we will build the huge fungus block by block.
+
+
+
+1. A loop that increments through each Y layer of the hat starts at the lowest layer of the hat ‘j’ and finishes 1 block above the trunk as the Y coordinate ‘k’ is incremented one more time after reaching the limit of hatHeight
+
+
+
+<p id="gdcalert5" ><span style="color: red; font-weight: bold">>>>>>  gd2md-html alert: inline image link here (to images/image5.png). Store image on your image server and adjust path/filename/extension if necessary. </span><br>(<a href="#">Back to top</a>)(<a href="#gdcalert6">Next alert</a>)<br><span style="color: red; font-weight: bold">>>>>> </span></p>
+
+
+![alt_text](images/image5.png "image_tooltip")
+
+
+
+
+2. The distance from the trunk ‘L’ is found. The 3rd line is what only lets huge fungus that are at least 4 blocks off the ground and have hats 8 blocks high have a radius of 3
+
+
+
+<p id="gdcalert6" ><span style="color: red; font-weight: bold">>>>>>  gd2md-html alert: inline image link here (to images/image6.png). Store image on your image server and adjust path/filename/extension if necessary. </span><br>(<a href="#">Back to top</a>)(<a href="#gdcalert7">Next alert</a>)<br><span style="color: red; font-weight: bold">>>>>> </span></p>
+
+
+![alt_text](images/image6.png "image_tooltip")
+
+
+
+
+3. Initial conditions for the loops for the X coord ‘m’ and the Z coord ‘n’ are set. Essentially the algorithm sweeps through the roughly rectangular prism-like shape of the huge fungus layer by layer starting at -X, lowest Y, -Z and finishing at +X, highest Y, +Z
+
+
+
+<p id="gdcalert7" ><span style="color: red; font-weight: bold">>>>>>  gd2md-html alert: inline image link here (to images/image7.png). Store image on your image server and adjust path/filename/extension if necessary. </span><br>(<a href="#">Back to top</a>)(<a href="#gdcalert8">Next alert</a>)<br><span style="color: red; font-weight: bold">>>>>> </span></p>
+
+
+![alt_text](images/image7.png "image_tooltip")
+
+
+
+
+4. For aesthetic reasons, the hat of a huge fungus is divided up into 4 regions, each of which has its own chances of generating specific types of blocks (different weightings for wart blocks and shroomlights). These different regions essentially boils down to:
+    1. The inside of the hat where no block is placed on the outside of the bounding box ‘bl4’
+    2. The corners of the hat where the blocks are placed on the outermost parts of the bounding box ‘bl5’
+    3. A 3 high ‘brim’ of the hat that makes up the lowest 3 layers of the bounding box, i.e. the area where vines generate ‘bl6’
+    4. The edges of the hat where the blocks are placed on the outermost edge of the bounding box, neither ‘bl4’, ‘bl5’ or ‘bl6’
+
+    	To help calculate whether a specific value of ‘m’ or ‘n’ meets the criteria of ‘bl4’, ‘bl5’ or ‘bl6’, variables ‘bl2’ and ‘bl3’ are found. ‘bl2’ is true when ‘m’ is furthest away AND ‘L’ blocks, from the trunk. It’s the same thing for ‘bl3’ except instead of ‘m’ it’s ‘n’
+
+
+
+
+<p id="gdcalert8" ><span style="color: red; font-weight: bold">>>>>>  gd2md-html alert: inline image link here (to images/image8.png). Store image on your image server and adjust path/filename/extension if necessary. </span><br>(<a href="#">Back to top</a>)(<a href="#gdcalert9">Next alert</a>)<br><span style="color: red; font-weight: bold">>>>>> </span></p>
+
+
+![alt_text](images/image8.png "image_tooltip")
+
+
+
+
+5. Next up we need to determine if we meet the criteria of either ‘bl4’, ‘bl5’ or ‘bl6’. As mentioned before ‘bl4’ is the region in which no blocks touch the bounding box, i.e. no blocks are the furthest from the trunk. This means that both ‘bl2’ and ‘bl3’ need to be false so the outermost blocks on the side aren’t included, as well as the topmost blocks on the top of the hat
+
+
+
+<p id="gdcalert9" ><span style="color: red; font-weight: bold">>>>>>  gd2md-html alert: inline image link here (to images/image9.png). Store image on your image server and adjust path/filename/extension if necessary. </span><br>(<a href="#">Back to top</a>)(<a href="#gdcalert10">Next alert</a>)<br><span style="color: red; font-weight: bold">>>>>> </span></p>
+
+
+![alt_text](images/image9.png "image_tooltip")
+
+
+
+
+6. ‘bl5’ is even simpler as it’s the corners of the hat meaning that both the X and Z coordinates need to be the furthest from the trunk, i.e. ‘bl2’ and ‘bl3’ are true
+
+
+
+<p id="gdcalert10" ><span style="color: red; font-weight: bold">>>>>>  gd2md-html alert: inline image link here (to images/image10.png). Store image on your image server and adjust path/filename/extension if necessary. </span><br>(<a href="#">Back to top</a>)(<a href="#gdcalert11">Next alert</a>)<br><span style="color: red; font-weight: bold">>>>>> </span></p>
+
+
+![alt_text](images/image10.png "image_tooltip")
+
+
+
+
+7. ‘bl6; applies to Y layers of the hat starting from the bottom, ‘j’, and moving 3 blocks up to ‘j’ + 2. Have you ever grown a bunch of huge fungi on top of each other and noticed how the first 3 layers of the huge fungus never generate shroomlights and are also hollow? Well this is the vines region and for warped trees, it only consists of wart blocks
+
+
+
+<p id="gdcalert11" ><span style="color: red; font-weight: bold">>>>>>  gd2md-html alert: inline image link here (to images/image11.png). Store image on your image server and adjust path/filename/extension if necessary. </span><br>(<a href="#">Back to top</a>)(<a href="#gdcalert12">Next alert</a>)<br><span style="color: red; font-weight: bold">>>>>> </span></p>
+
+
+![alt_text](images/image11.png "image_tooltip")
+
+
+
+
+8. Now, this just leaves the outermost edges region. When you think about it, the edges of the tree are basically everything but the corners and the inside. Think of it like a 3x3 Rubiks cube where the inside mechanism is ‘bl4’, the corner pieces are ‘bl5’ and the edges are well, the edge pieces (and the centre pieces are the trunk). So the way to find the edges is to first find where the other regions are and then negate that. This isn’t strictly written anywhere in the code but it can be derived
+9. Now as there is some overlap between the vines region ‘bl6’ and the inside region ‘bl4’, some more work needs to be done to further separate these two. This turns ‘bl6’ into a hollow shell as it removes all blocks in ‘bl6’ that aren’t touching the bounding box
+
+
+
+<p id="gdcalert12" ><span style="color: red; font-weight: bold">>>>>>  gd2md-html alert: inline image link here (to images/image12.png). Store image on your image server and adjust path/filename/extension if necessary. </span><br>(<a href="#">Back to top</a>)(<a href="#gdcalert13">Next alert</a>)<br><span style="color: red; font-weight: bold">>>>>> </span></p>
+
+
+![alt_text](images/image12.png "image_tooltip")
+
+
+
+
+10. Finally, the block type distributions are calculated using a multitude of hard-coded values, all for aesthetic reasons
+
+
+
+<p id="gdcalert13" ><span style="color: red; font-weight: bold">>>>>>  gd2md-html alert: inline image link here (to images/image13.png). Store image on your image server and adjust path/filename/extension if necessary. </span><br>(<a href="#">Back to top</a>)(<a href="#gdcalert14">Next alert</a>)<br><span style="color: red; font-weight: bold">>>>>> </span></p>
+
+
+![alt_text](images/image13.png "image_tooltip")
+
+
+I purposefully included the additional vine region code to show that there is no chance for shroomlights to generate in that region. Some important takeaways here is that there are regions of the tree where wart blocks have an exceptionally high chance of generating, 98%, meaning that a setup could be made to harvest blocks only from that region as opposed to say harvesting from the region ‘bl4’ where they only have a 20% chance of generating. 
+
+Note that decoration chance here refers to shroomlights and the ternary is used for determining the chance of a weeping vine generating there if the block is a netherwart block.
+
+**Additional Stuff**
+
+There are some minor probability errors in this (and the vines layer being 1 too high) but this should give u a more intuitive idea of what’s going on here
+
+
+
+<p id="gdcalert14" ><span style="color: red; font-weight: bold">>>>>>  gd2md-html alert: inline image link here (to images/image14.png). Store image on your image server and adjust path/filename/extension if necessary. </span><br>(<a href="#">Back to top</a>)(<a href="#gdcalert15">Next alert</a>)<br><span style="color: red; font-weight: bold">>>>>> </span></p>
+
+
+![alt_text](images/image14.png "image_tooltip")
+
+
+~~Why look at the probability table when u have the code right above doe~~
+
+That’s pretty much it, there’s a phase 3 where the weeping vines/vine region is generated but this is a bit more complicated and not too applicable for huge fungus farming so I also left it out.
+
+If you wanna take a look at the code yourself in more detail, join the fabric project discord where’s there’s heaps of info on how to decompile the code and find whatever you’re after:
+
+[https://discord.gg/T2GJp3aX8q](https://discord.gg/T2GJp3aX8q)
+
+And of course, if you want even more accurate graphics and charts about nether trees as well as all the different farms for them, consider joining the nether tree discord server:
+
+[https://discord.gg/EKKkyfcPPV](https://discord.gg/EKKkyfcPPV)
+
+Oh and also if you want to mess around with generating huge fungus on a graphing calculator here’s a little project I’m working on
+
+[https://www.desmos.com/calculator/tsrdkppcbk](https://www.desmos.com/calculator/tsrdkppcbk)
+
+Anyways, thanks for taking the time out of your day to learn more about huge fungus and I hope you have a lovely day :)
+
+
+
 ## Block Properties
 A table showing the various blocks that are heavily involved in a Huge Fungi Farm:
 ![fungi_table](https://i.imgur.com/rQrmRej.png)
